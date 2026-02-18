@@ -1,0 +1,71 @@
+name: CI - Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "app/**"
+
+env:
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/demo-lambda-api
+
+jobs:
+  build-and-push:
+    name: Build and push Docker image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set short SHA
+        id: vars
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./app
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.sha }}
+            ${{ env.IMAGE_NAME }}:latest
+
+  update-manifest:
+    name: Update image tag in k8s manifest
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set short SHA
+        id: vars
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Replace DOCKER_USERNAME placeholder (first time only)
+        run: |
+          sed -i "s|DOCKER_USERNAME|${{ secrets.DOCKERHUB_USERNAME }}|g" k8s/deployment.yaml
+
+      - name: Update image tag
+        run: |
+          sed -i "s|demo-lambda-api:IMAGE_TAG|demo-lambda-api:${{ steps.vars.outputs.sha }}|g" k8s/deployment.yaml
+          sed -i "s|demo-lambda-api:.*|demo-lambda-api:${{ steps.vars.outputs.sha }}|g" k8s/deployment.yaml
+
+      - name: Commit and push updated manifest
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add k8s/deployment.yaml
+          git diff --cached --quiet || git commit -m "ci: update image tag to ${{ steps.vars.outputs.sha }}"
+          git push

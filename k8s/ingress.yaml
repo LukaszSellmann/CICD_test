@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo-api
+  namespace: demo-api
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-dns"
+    external-dns.alpha.kubernetes.io/hostname: "demo-api.zdupy.eu"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - demo-api.zdupy.eu
+      secretName: demo-api-tls
+  rules:
+    - host: demo-api.zdupy.eu
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: demo-api
+                port:
+                  number: 80
