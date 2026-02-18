@@ -53,13 +53,8 @@ jobs:
         id: vars
         run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Replace DOCKER_USERNAME placeholder (first time only)
-        run: |
-          sed -i "s|DOCKER_USERNAME|${{ secrets.DOCKERHUB_USERNAME }}|g" k8s/deployment.yaml
-
       - name: Update image tag
         run: |
-          sed -i "s|demo-lambda-api:IMAGE_TAG|demo-lambda-api:${{ steps.vars.outputs.sha }}|g" k8s/deployment.yaml
           sed -i "s|demo-lambda-api:.*|demo-lambda-api:${{ steps.vars.outputs.sha }}|g" k8s/deployment.yaml
 
       - name: Commit and push updated manifest

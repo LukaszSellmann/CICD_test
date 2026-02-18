@@ -27,7 +27,7 @@ spec:
       serviceAccountName: demo-api-sa
       containers:
         - name: demo-api
-          image: DOCKER_USERNAME/demo-lambda-api:IMAGE_TAG
+          image: lukaszsel/demo-lambda-api:IMAGE_TAG
           ports:
             - containerPort: 8000
           env:
