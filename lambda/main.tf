@@ -52,6 +52,27 @@ resource "aws_lambda_function" "echo" {
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 }
 
+# Zip users handler
+data "archive_file" "users_lambda_zip" {
+  type        = "zip"
+  source_file = "${path.module}/users_handler.py"
+  output_path = "${path.module}/users_handler.zip"
+}
+
+# Users Lambda function (reuses the same IAM role)
+resource "aws_lambda_function" "users" {
+  function_name    = "demo-users-lambda"
+  role             = aws_iam_role.lambda_exec.arn
+  handler          = "users_handler.lambda_handler"
+  runtime          = "python3.12"
+  filename         = data.archive_file.users_lambda_zip.output_path
+  source_code_hash = data.archive_file.users_lambda_zip.output_base64sha256
+}
+
 output "lambda_function_name" {
   value = aws_lambda_function.echo.function_name
+}
+
+output "lambda_users_function_name" {
+  value = aws_lambda_function.users.function_name
 }
