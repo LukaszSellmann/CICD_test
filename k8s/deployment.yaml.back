@@ -27,7 +27,7 @@ spec:
       serviceAccountName: demo-api-sa
       containers:
         - name: demo-api
-          image: 144952111748.dkr.ecr.us-east-1.amazonaws.com/demo-lambda-api:latest
+          image: lukaszsel/demo-lambda-api:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
