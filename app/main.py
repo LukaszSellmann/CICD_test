@@ -17,7 +17,7 @@ class InvokeRequest(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "very ok"}
 
 
 @app.post("/invoke")
